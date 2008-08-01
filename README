@@ -1,0 +1,13 @@
+SG_WBB
+======
+
+You create a bot by creating a function that receives a SG_WBB_Bot as a arg.
+
+Then set your key, turn handler and bot version on SG_WBB, and then starting the "turn"
+
+// TODO: More later
+
+Math
+====
+
+Something about the math here
