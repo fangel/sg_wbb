@@ -277,7 +277,7 @@ class SG_WBB {
 		echo '<h1>' . basename( $_SERVER['SCRIPT_FILENAME']) . '</h1>';
 	    highlight_string($source);
 		echo '<h1>' . basename(__FILE__) . '</h1>';
-		echo '<p>The latest version of SG_WBB can be found at';
+		echo '<p>The latest version of SG_WBB can be found at ';
 		echo '<a href="http://github.com/fangel/sg_wbb/tree/master">http://github.com/fangel/sg_wbb/tree/master</a>';
 		echo '</p>';
 		highlight_file(__FILE__);
