@@ -103,7 +103,7 @@ class SG_WBB {
 	 */
 	public static function takeTurn() {
 		if( self::$useErrorHandler ) {
-			set_error_handler( array('SG_WBB', 'errorHandler'));
+			set_error_handler( array('SG_WBB', 'errorLogger'));
 		}
 		
 		if( isset($_GET['displaySource']) || isset($_GET['describe'])) {
