@@ -94,7 +94,7 @@ class SG_WBB {
 	 * @param int $log_level
 	 */
 	public static function setLogLevel( $log_level ) {
-		self::$log_level = (int) $log_level;
+		self::$logLevel = (int) $log_level;
 	}
 	
 	/**
