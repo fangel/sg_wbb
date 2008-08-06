@@ -1,11 +1,5 @@
 <?php
 
-if (isset($_GET['displaySource']) || isset($_GET['describe'])) {
-    $source = file_get_contents(__FILE__);
-    highlight_string($source);
-    exit;
-}
-
 /**
  * SG_WBB is a class containing a lot of useful static functions for 
  * dealing with Paul Reinheimers Web Bot Battle
