@@ -28,7 +28,7 @@ class SG_WBB {
 	protected static $callType = false;
 	protected static $bot = null;
 	protected static $useErrorHandler = true;
-	protected static $logLevel = self::LL_ALL;
+	protected static $logLevel = SG_WBB::LL_ALL;
 
 	/**
 	 * Sets the key that the Bot functions under
@@ -112,13 +112,13 @@ class SG_WBB {
 		
 		$state = self::getState();
 		
-		SG_WBB::mlog('GET: ' . http_build_query($_GET), self::LL_DEBUG);
+		SG_WBB::mlog('GET: ' . http_build_query($_GET), SG_WBB::LL_DEBUG);
 		SG_WBB::mlog('Info: ' . 
 			' key: ' . self::getKey() . 
 			' gameId: ' . self::getGameId() . 
 			' callType: ' . self::$callType . 
 			' turnHandler: ' . self::$turnHandler
-			, self::LL_DEBUG
+			, SG_WBB::LL_DEBUG
 		);
 		
 		switch( self::$callType ) {
@@ -145,7 +145,7 @@ class SG_WBB {
 			case 'round':
 				self::$bot = SG_WBB_Bot::spawnBot( $state );
 			
-				SG_WBB::mlog('Bot: ' . print_r(self::$bot, true), self::LL_DEBUG);
+				SG_WBB::mlog('Bot: ' . print_r(self::$bot, true), SG_WBB::LL_DEBUG);
 				
 				call_user_func( self::$turnHandler, self::$bot );				
 				$state = self::$bot->getState();
@@ -154,7 +154,7 @@ class SG_WBB {
 				throw new Exception('Failed to understand call type');
 		}
 		
-		SG_WBB::mlog("\n", self::LL_DEBUG);
+		SG_WBB::mlog("\n", SG_WBB::LL_DEBUG);
 		
 		$succ = self::setState($state);
 		if( ! $succ ) {
@@ -174,7 +174,7 @@ class SG_WBB {
 		$params += $uparams;
 		
 		$url = $_GET['url'] . "?" . http_build_query($params);
-		SG_WBB::mlog('Call WS: ' . $url, self::LL_WS);
+		SG_WBB::mlog('Call WS: ' . $url, SG_WBB::LL_WS);
 		$response = file_get_contents($url);
 		return $response;
 	}
@@ -200,7 +200,7 @@ class SG_WBB {
 	 * A simple error logger used for piping phps errors into mlog
 	 */
 	public static function errorLogger($errno, $errstr, $errfile, $errline) {
-	    SG_WBB::mlog('ERROR: ' . $errno . ', ' . $errstr . ' . in ' . $errfile . ' (' . $errline . ')', self::LL_ERROR);
+	    SG_WBB::mlog('ERROR: ' . $errno . ', ' . $errstr . ' . in ' . $errfile . ' (' . $errline . ')', SG_WBB::LL_ERROR);
 	}
 	
 	/**
@@ -244,7 +244,7 @@ class SG_WBB {
 	 * @param array $state
 	 */
 	protected static function setState( $state ) {
-		SG_WBB::mlog('setState: ' . var_export($state, true), self::LL_DEBUG);
+		SG_WBB::mlog('setState: ' . var_export($state, true), SG_WBB::LL_DEBUG);
 		$file = self::getTempFile('wbb-' . self::getGameId() . '-' . self::getKey() . '.state.txt');
 		
 		$succ = file_put_contents($file, serialize($state) );
@@ -325,10 +325,11 @@ class SG_WBB_Bot {
 	 * @return int Bots hit
 	 */
 	public function fire( $angle, $energy ) {
+		$energy = min( $energy, $this->energy );
 		$cont = SG_WBB::callServer('fire', array('energy' => $energy, 'degree' => $angle));
 		$this->energy -= $energy;
 		
-		SG_WBB::mlog('FIRE: ' . $cont, self::LL_WS);
+		SG_WBB::mlog('FIRE: ' . $cont, SG_WBB::LL_WS);
 		
 		$xml = simplexml_load_string($cont);
 		return (int) $xml->responseValues->botsHit;
@@ -347,7 +348,7 @@ class SG_WBB_Bot {
 		
 		$this->energy -= $dir['distance'];
 		
-		SG_WBB::mlog('DRIVE: ' . $cont, self::LL_WS);
+		SG_WBB::mlog('DRIVE: ' . $cont, SG_WBB::LL_WS);
 		// TODO: Recalculate current position
 		
 		if( 0 < $this->energy ) {
@@ -367,7 +368,7 @@ class SG_WBB_Bot {
 		$cont = SG_WBB::callServer('scan', array('degree' => $angle));
 		$this->energy -= 7;
 		
-		SG_WBB::mlog('SCAN: ' . $cont, self::LL_WS);
+		SG_WBB::mlog('SCAN: ' . $cont, SG_WBB::LL_WS);
 		
 		$xml = simplexml_load_string($cont);
 		if( $xml->responseValues->hits > 0 ) {
@@ -499,7 +500,7 @@ class SG_WBB_Target {
 		$msg .= "\t" . 'Calc: ' . $target->getAngle() . ', ' . $target->getDistance() . "\n";
 		$msg .= "\t" . 'Expt: ' . $angle . ', ' . $distance . "\n";
 		
-		SG_WBB::mlog('TARGET: ' . $msg, self::LL_DEBUG);
+		SG_WBB::mlog('TARGET: ' . $msg, SG_WBB::LL_DEBUG);
 		
 		return $target;
 	}
