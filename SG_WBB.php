@@ -274,9 +274,9 @@ class SG_WBB {
 	protected static function displaySource() {
 		$source = file_get_contents( $_SERVER['SCRIPT_FILENAME']);
 	    $source = str_replace(self::$key, "########################", $source);
-		echo '<h1>' . basename( $_SERVER['SCRIPT_FILENAME']) . '</h1>';
+		echo '<h1>' . basename( $_SERVER['SCRIPT_FILENAME']) . ' (v' . self::$botVersion . ')</h1>';
 	    highlight_string($source);
-		echo '<h1>' . basename(__FILE__) . '</h1>';
+		echo '<h1>' . basename(__FILE__) . ' (v' . self::SG_WBB_VERSION . ')</h1>';
 		echo '<p>The latest version of SG_WBB can be found at ';
 		echo '<a href="http://github.com/fangel/sg_wbb/tree/master">http://github.com/fangel/sg_wbb/tree/master</a>';
 		echo '</p>';
