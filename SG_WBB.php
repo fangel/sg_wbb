@@ -150,6 +150,13 @@ class SG_WBB {
 				call_user_func( self::$turnHandler, self::$bot );				
 				$state = self::$bot->getState();
 				break;
+			case 'death':
+				SG_WBB::mlog('Bot died, removing state file', SG_WBB::LL_DEBUG);
+				$file = self::getTempFile('wbb-' . self::getGameId() . '-' . self::getKey() . '.state.txt');
+				if( file_exists( $file ) ) {
+					unlink( $file );
+				}
+				break;
 			default:
 				throw new Exception('Failed to understand call type');
 		}
