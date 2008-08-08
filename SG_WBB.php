@@ -189,6 +189,10 @@ class SG_WBB {
 	
 	/**
 	 * Saves a message on a local log on the server
+	 *
+	 * If the constant SG_WBB_USE_STDOUT is set to true, stdout will be 
+	 * used instead instead of the mlog file
+	 *
 	 * @param string $message
 	 * @param int $log_level
 	 * @return bool
@@ -199,6 +203,10 @@ class SG_WBB {
 			if( !$file ) {
 				return false;
 			}
+			
+			if( defined('SG_WBB_USE_STDOUT') && SG_WBB_USE_STDOUT ) {
+				$file = 'php://stdout';
+			}			
 		
 			return file_put_contents($file, $message . "\n", FILE_APPEND);
 		}
