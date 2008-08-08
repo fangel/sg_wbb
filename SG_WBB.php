@@ -11,7 +11,7 @@
  * @license Creative Commons Share-Alike Attribution
  */
 class SG_WBB {
-	const SG_WBB_VERSION = '0.3b';
+	const SG_WBB_VERSION = '0.3.1b';
 	
 	const LL_NONE = 0;
 	const LL_DEBUG = 1;
