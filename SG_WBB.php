@@ -176,6 +176,7 @@ class SG_WBB {
 		$url = $_GET['url'] . "?" . http_build_query($params);
 		SG_WBB::mlog('Call WS: ' . $url, SG_WBB::LL_WS);
 		$response = file_get_contents($url);
+		SG_WBB::mlog('WS response: ' . $response, SG_WBB::LL_WS);
 		return $response;
 	}
 	
@@ -329,8 +330,6 @@ class SG_WBB_Bot {
 		$cont = SG_WBB::callServer('fire', array('energy' => $energy, 'degree' => $angle));
 		$this->energy -= $energy;
 		
-		SG_WBB::mlog('FIRE: ' . $cont, SG_WBB::LL_WS);
-		
 		$xml = simplexml_load_string($cont);
 		return (int) $xml->responseValues->botsHit;
 	}
@@ -348,12 +347,23 @@ class SG_WBB_Bot {
 		
 		$this->energy -= $dir['distance'];
 		
-		SG_WBB::mlog('DRIVE: ' . $cont, SG_WBB::LL_WS);
-		// TODO: Recalculate current position
+		switch( $dir['direction'] ) {
+			case 1:
+				$this->pos_x -= $dir['distance'];
+				break;
+			case 2:
+				$this->pos_y -= $dir['distance'];
+				break;	
+			case 3:
+				$this->pos_x += $dir['distance'];
+				break;
+			case 4:
+				$this->pos_y += $dir['distance'];
+				break;
+		}
 		
-		if( 0 < $this->energy ) {
-			// TODO: Reissue drive command to use the remaining energy along
-			// the other axis
+		if( 0 < $this->energy && !($this->pos_x == $to_x && $this->pos_y == $to_y) ) {
+			$this->drive($to_x, $to_y);
 		}
 	}
 	
@@ -373,10 +383,11 @@ class SG_WBB_Bot {
 		$xml = simplexml_load_string($cont);
 		if( $xml->responseValues->hits > 0 ) {
 			$targets = array();
-			foreach($xml->responseValues->coords AS $hits) {
-				$angle = (float) $hits->a->angle;
-				$distance = (float) $hits->a->distance;
-				$targets[] = SG_WBB_Target::spawnTarget( $angle, $distance );
+			foreach($xml->responseValues->coords->bot AS $hit) {
+				$angle = (float) $hit->angle;
+				$distance = (float) $hit->distance;
+				$condition = (int) $hit->condition;
+				$targets[] = SG_WBB_Target::spawnTarget( $angle, $distance, $condition );
 			}
 			return $targets;
 		}
@@ -481,19 +492,22 @@ class SG_WBB_Bot {
 class SG_WBB_Target {
 	private $pos_x;
 	private $pos_y;
+	private $condition;
 	
 	/**
 	 * Creates a new target object.
 	 * @param int $angel
 	 * @param int $distance
+	 * @param int $condition
 	 * @return SG_WBB_Target
 	 */
-	public static function spawnTarget( $angle, $distance ) {
+	public static function spawnTarget( $angle, $distance, $condition ) {
 		$bot_pos = SG_WBB::getBot()->getPosition();
 				
 		$target = new SG_WBB_Target();
 		$target->pos_x = round($bot_pos['x'] + cos( deg2rad($angle) ) * $distance);
 		$target->pos_y = round($bot_pos['y'] + sin( deg2rad($angle) ) * $distance);
+		$target->condition = $condition;
 		
 		$msg = '';
 		$msg .= 'Calc: (' . $target->pos_x . ', ' . $target->pos_y . ')' . "\n";
@@ -547,5 +561,13 @@ class SG_WBB_Target {
 		$distance = sqrt(pow(($this_pos['x']-$bot_pos['x']),2) + pow(($this_pos['y']-$bot_pos['y']),2));
 		
 		return $distance;
+	}
+	
+	/**
+	 * Returns the condition of the target. Higher is more health.
+	 * @return int
+	 */
+	public function getCondition() {
+		return $this->condition;
 	}
 }
