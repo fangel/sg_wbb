@@ -29,6 +29,7 @@ class SG_WBB {
 	protected static $bot = null;
 	protected static $useErrorHandler = true;
 	protected static $logLevel = SG_WBB::LL_ALL;
+	protected static $arenaInfo = array();
 
 	/**
 	 * Sets the key that the Bot functions under
@@ -111,6 +112,7 @@ class SG_WBB {
 		}
 		
 		$state = self::getState();
+		self::$arenaInfo = $state['arena'];
 		
 		SG_WBB::mlog('GET: ' . http_build_query($_GET), SG_WBB::LL_DEBUG);
 		SG_WBB::mlog('Info: ' . 
@@ -123,32 +125,28 @@ class SG_WBB {
 		
 		switch( self::$callType ) {
 			case 'gameInit':
-				$state = array();
+				$state = array('bot'=>array(), 'arena'=>array());
 				
-				// TODO: Parse incoming cost values
-				// Example:
-				// GET: callType=gameInit
-				//		&gameID=xxxx
-				//		&serverURL=http%3A%2F%2Fexample.preinheimer.com%2Fwbb%2Farena.php
-				//		&scanRange=300
-				//		&scanDegrees=10
-				//		&scanCost=7
-				//		&driveCost=1
-				//		&fireWidth=2
-				//		&fireRange=300
-				//		&fireBaseCost=0
-				//		&serverKey=xxxxx
+				$state['arena']['scanRange'] = $_GET['scanRange'];
+				$state['arena']['scanDegrees'] = $_GET['scanDegrees'];
+				$state['arena']['scanCost'] = $_GET['scanCost'];
+				$state['arena']['driveCost'] = $_GET['driveCost'];
+				$state['arena']['driveBaseCost'] = $_GET['driveBaseCost'];
+				$state['arena']['fireWidth'] = $_GET['fireWidth'];
+				$state['arena']['fireRange'] = $_GET['fireRange'];
+				$state['arena']['fireBaseCost'] = $_GET['fireBaseCost'];
 				
+				self::$arenaInfo = $state['arena'];
 				
 				echo self::$botVersion . '-' . self::SG_WBB_VERSION;
 				break;
 			case 'round':
-				self::$bot = SG_WBB_Bot::spawnBot( $state );
+				self::$bot = SG_WBB_Bot::spawnBot( $state['bot'] );
 			
 				SG_WBB::mlog('Bot: ' . print_r(self::$bot, true), SG_WBB::LL_DEBUG);
 				
 				call_user_func( self::$turnHandler, self::$bot );				
-				$state = self::$bot->getState();
+				$state['bot'] = self::$bot->getState();
 				break;
 			case 'death':
 				SG_WBB::mlog('Bot died, removing state file', SG_WBB::LL_DEBUG);
@@ -158,14 +156,14 @@ class SG_WBB {
 				}
 				break;
 			default:
-				throw new Exception('Failed to understand call type');
+				SG_WBB::mlog('Failed to understand call type: ' . self::$callType, LL_ERROR);
 		}
 		
 		SG_WBB::mlog("\n", SG_WBB::LL_DEBUG);
 		
 		$succ = self::setState($state);
 		if( ! $succ ) {
-			throw new Exception('Failed to save state');
+			SG_WBB::mlog('Failed to save state', LL_ERROR);
 		}
 	}
 	
@@ -182,8 +180,10 @@ class SG_WBB {
 		
 		$url = $_GET['url'] . "?" . http_build_query($params);
 		SG_WBB::mlog('Call WS: ' . $url, SG_WBB::LL_WS);
+		
 		$response = file_get_contents($url);
 		SG_WBB::mlog('WS response: ' . $response, SG_WBB::LL_WS);
+		
 		return $response;
 	}
 	
@@ -253,6 +253,21 @@ class SG_WBB {
 		}
 		
 		return $state;
+	}
+	
+	/**
+	 * Returns the arena info (or a specific part of it)
+	 * @param string $info
+	 * @return mixed
+	 */
+	public static function getArenaInfo( $info = null ) {
+		if( $info == null ) {
+			return self::$arenaInfo;
+		} elseif( isset(self::$arenaInfo[$info]) ) {
+			return self::$arenaInfo[$info];
+		} else {
+			return null;
+		}
 	}
 	
 	/**
@@ -356,11 +371,14 @@ class SG_WBB_Bot {
 	 */
 	public function drive( $to_x, $to_y ) {
 		$dir = $this->drivingDirections( $to_x, $to_y );
-		$dir['distance'] = min($dir['distance'], $this->energy);
+		if( $dir['distance'] * SG_WBB::getArenaInfo('driveCost') > $this->energy) {
+			// We are going to run out of fuel
+			$dir['distance'] = ceil($this->energy / SG_WBB::getArenaInfo('driveCost'));
+		}
 		
 		$cont = SG_WBB::callServer('drive', $dir);
 		
-		$this->energy -= $dir['distance'];
+		$this->energy -= $dir['distance'] * SG_WBB::getArenaInfo('driveCost');
 		
 		switch( $dir['direction'] ) {
 			case 1:
@@ -391,9 +409,7 @@ class SG_WBB_Bot {
 	 */
 	public function scan( $angle ) {
 		$cont = SG_WBB::callServer('scan', array('degree' => $angle));
-		$this->energy -= 7;
-		
-		SG_WBB::mlog('SCAN: ' . $cont, SG_WBB::LL_WS);
+		$this->energy -= SG_WBB::getArenaInfo('scanCost');
 		
 		$xml = simplexml_load_string($cont);
 		if( $xml->responseValues->hits > 0 ) {
