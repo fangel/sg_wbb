@@ -153,6 +153,8 @@ class SG_WBB {
 				$file = self::getTempFile('wbb-' . self::getGameId() . '-' . self::getKey() . '.state.txt');
 				if( file_exists( $file ) ) {
 					unlink( $file );
+					echo 'Thanks for playing';
+					return;
 				}
 				break;
 			default:
