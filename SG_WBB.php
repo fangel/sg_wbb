@@ -149,7 +149,8 @@ class SG_WBB {
 				$state['bot'] = self::$bot->getState();
 				break;
 			case 'death':
-				SG_WBB::mlog('Bot died, removing state file', SG_WBB::LL_DEBUG);
+			case 'victory':
+				SG_WBB::mlog('Game finished, removing state file', SG_WBB::LL_DEBUG);
 				$file = self::getTempFile('wbb-' . self::getGameId() . '-' . self::getKey() . '.state.txt');
 				if( file_exists( $file ) ) {
 					unlink( $file );
